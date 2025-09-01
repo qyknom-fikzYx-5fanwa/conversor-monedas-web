@@ -4,11 +4,14 @@ from datetime import datetime, date
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import random
+from pathlib import Path
 
-# 🌐 Selector de idioma manual
-idioma_actual = st.selectbox("🌍 Elige el idioma", ["es", "pt", "en"], index=0)
+# TEM QUE SER O PRIMEIRO
+st.set_page_config(page_title="Conversor de Moedas", layout="centered")
 
-# 🗣️ Diccionario de textos por idioma
+# 🌐 Idioma
+idioma_actual = st.selectbox("🌍 Elige el idioma / Escolha o idioma / Choose language", ["pt", "es", "en"], index=0)
+
 idiomas = {
     "es": {
         "titulo": "Conversor de Monedas Inteligente",
@@ -21,9 +24,12 @@ idiomas = {
         "grafico": "📈 Mostrar gráfico histórico",
         "rango": "Selecciona el rango de fechas",
         "historial": "🕒 Historial de conversiones",
-        "fuente": "📊 Datos del Banco Central Europeo. Actualizados diariamente a las 16:00 CET.",
-        "error_api": "❌ No se pudo conectar con la API.",
-        "error_grafico": "❌ No se pudo generar el gráfico."
+        "fuente": "📊 Datos del Banco Central Europeo (vía Frankfurter). Actualizados a las 16:00 CET.",
+        "error_api": "No se pudo conectar con la API.",
+        "error_grafico": "No se pudo generar el gráfico.",
+        "curiosidad_hoy": "🎯 Curiosidad del día",
+        "dica": "💡 Consejo financiero",
+        "mostrar_graf": "📊 Mostrar gráfico histórico"
     },
     "pt": {
         "titulo": "Guia de câmbio pessoal para cada viagem ao Brasil",
@@ -36,9 +42,12 @@ idiomas = {
         "grafico": "📈 Mostrar gráfico histórico",
         "rango": "Escolha o intervalo de datas",
         "historial": "🕒 Histórico de conversões",
-        "fuente": "📊 Dados do Banco Central Europeu. Atualizados diariamente às 16:00 CET.",
-        "error_api": "❌ Erro ao conectar com a API.",
-        "error_grafico": "❌ Não foi possível gerar o gráfico."
+        "fuente": "📊 Dados do Banco Central Europeu (via Frankfurter). Atualizados às 16:00 CET.",
+        "error_api": "Erro ao conectar com a API.",
+        "error_grafico": "Não foi possível gerar o gráfico.",
+        "curiosidad_hoy": "🎯 Curiosidade do dia",
+        "dica": "💡 Dica financeira",
+        "mostrar_graf": "📊 Mostrar gráfico histórico"
     },
     "en": {
         "titulo": "Smart Currency Converter",
@@ -50,116 +59,133 @@ idiomas = {
         "resultado": "Result",
         "grafico": "📈 Show historical chart",
         "rango": "Select date range",
-        "historial": "🕒 Conversion History",
-        "fuente": "📊 Data from the European Central Bank. Updated daily at 16:00 CET.",
-        "error_api": "❌ Could not connect to the API.",
-        "error_grafico": "❌ Could not generate the chart."
+        "historial": "🕒 Conversion history",
+        "fuente": "📊 Data from the European Central Bank (via Frankfurter). Updated at 16:00 CET.",
+        "error_api": "Could not connect to the API.",
+        "error_grafico": "Could not generate the chart.",
+        "curiosidad_hoy": "🎯 Curiosity of the day",
+        "dica": "💡 Tip",
+        "mostrar_graf": "📊 Show historical chart"
     }
 }
+t = idiomas[idioma_actual]
 
-texto = idiomas[idioma_actual]
-monedas = ["EUR", "USD", "BRL"]
-historial = []
+# Mapeia símbolos
+SYMB = {"EUR": "€", "USD": "$", "BRL": "R$"}
 
-# 📌 Consejos financieros por moneda e idioma
+# Dicas
 dicas = {
     "BRL": {
-        "es": ["💡 Compara tasas entre bancos antes de cambiar reales.", "📊 El real puede depreciarse en años electorales."],
-        "pt": ["💡 Compare taxas entre bancos antes de trocar reais.", "📊 O real pode se desvalorizar em anos eleitorais."],
-        "en": ["💡 Compare exchange rates before converting BRL.", "📊 BRL may weaken during election years."]
+        "es": ["Compara tasas entre bancos antes de cambiar reales.", "El real puede depreciarse en años electorales."],
+        "pt": ["Compare taxas entre bancos antes de trocar reais.", "O real pode se desvalorizar em anos eleitorais."],
+        "en": ["Compare bank rates before converting BRL.", "BRL may weaken in election years."]
     },
     "USD": {
-        "es": ["💵 El dólar es aceptado en muchos países.", "📈 Las tasas de interés en EE.UU. afectan el valor global."],
-        "pt": ["💵 O dólar é aceito em muitos países.", "📈 Taxas de juros nos EUA afetam o valor global."],
-        "en": ["💵 The dollar is accepted worldwide.", "📈 U.S. interest rates influence global value."]
+        "es": ["El dólar es aceptado en muchos países.", "Las tasas de la Fed pesan en el valor global."],
+        "pt": ["O dólar é aceito em muitos países.", "As taxas da Fed afetam o valor global."],
+        "en": ["Widely accepted worldwide.", "Fed rates move global value."]
     },
     "EUR": {
-        "es": ["💶 El euro es estable, pero sensible al BCE.", "🌍 Es la segunda moneda más usada en reservas."],
-        "pt": ["💶 O euro é estável, mas sensível às decisões do BCE.", "🌍 É a segunda moeda mais usada em reservas."],
-        "en": ["💶 The euro is stable but sensitive to ECB decisions.", "🌍 It's the second most used currency globally."]
+        "es": ["Estable pero sensible al BCE.", "Segunda moneda en reservas."],
+        "pt": ["Estável, porém sensível ao BCE.", "Segunda moeda mais usada em reservas."],
+        "en": ["Stable, sensitive to ECB.", "Second most used in reserves."]
     }
 }
 
-# 📚 Curiosidades por país
-def mostrar_curiosidad(moneda):
-    archivo = {
-        "BRL": "curiosidades_br.txt",
-        "EUR": "curiosidades_es.txt",
-        "USD": "curiosities_us.txt"
-    }.get(moneda, "")
-    try:
-        with open(archivo, "r", encoding="utf-8") as f:
-            frases = f.readlines()
-            return random.choice(frases).strip()
-    except:
-        return "⚠️ Curiosidad no disponible."
+# --------- Cache ---------
+@st.cache_data
+def carregar_curiosidades(archivo: str):
+    p = Path(archivo)
+    if not p.exists():
+        return []
+    with p.open("r", encoding="utf-8") as f:
+        return [ln.strip() for ln in f if ln.strip()]
 
-def mostrar_dica(moneda):
-    if moneda in dicas and idioma_actual in dicas[moneda]:
-        return random.choice(dicas[moneda][idioma_actual])
-    return ""
+@st.cache_data
+def get_rates_latest(amount, origem, destino):
+    url = f"https://api.frankfurter.app/latest?amount={amount}&from={origem}&to={destino}"
+    r = requests.get(url, timeout=15)
+    if r.status_code != 200:
+        raise RuntimeError("API error")
+    return r.json()
 
-# 🖼️ Interfaz principal
-st.set_page_config(page_title=texto["titulo"], layout="centered")
-st.title(texto["titulo"])
-st.caption(texto["descripcion"])
+@st.cache_data
+def get_series(inicio: date, fim: date, origem: str, destino: str):
+    url = f"https://api.frankfurter.app/{inicio}..{fim}?from={origem}&to={destino}"
+    r = requests.get(url, timeout=20)
+    if r.status_code != 200:
+        raise RuntimeError("API error")
+    data = r.json()
+    rates = data.get("rates", {})
+    # ordena por data
+    fechas = sorted(rates.keys())
+    valores = [rates[d][destino] for d in fechas]
+    fechas_dt = [datetime.strptime(d, "%Y-%m-%d") for d in fechas]
+    return fechas_dt, valores
+
+# --------- Estado ---------
+if "hist" not in st.session_state:
+    st.session_state.hist = []
+
+if "seed_curio" not in st.session_state:
+    st.session_state.seed_curio = datetime.now().strftime("%Y-%m-%d")
+
+# --------- UI ---------
+st.title(t["titulo"])
+st.caption(t["descripcion"])
 st.divider()
 
-# 💱 Conversión
+monedas = ["EUR", "USD", "BRL"]
+
 col1, col2 = st.columns(2)
 with col1:
-    cantidad = st.number_input(texto["valor"], min_value=0.0, value=1.0)
-    origen = st.selectbox(texto["de"], monedas, index=0)
+    cantidad = st.number_input(t["valor"], min_value=0.0, value=5.0, step=1.0, format="%.2f")
+    origem = st.selectbox(t["de"], monedas, index=0)
 with col2:
-    destino = st.selectbox(texto["para"], monedas, index=2)
+    destino = st.selectbox(t["para"], monedas, index=2)
 
-if st.button(texto["convertir"]):
+# botão converter
+if st.button(t["convertir"], use_container_width=False):
     try:
-        if origen == destino:
+        if origem == destino:
             resultado = cantidad
         else:
-            url = f"https://api.frankfurter.app/latest?amount={cantidad}&from={origen}&to={destino}"
-            data = requests.get(url).json()
-            resultado = data["rates"][destino]
-        st.metric(label=texto["resultado"], value=f"{resultado:.2f} {destino}", delta=f"{cantidad} {origen}")
-        st.info(f"📌 {mostrar_curiosidad(destino)}")
-        st.warning(f"{mostrar_dica(destino)}")
-        historial.append(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {cantidad} {origen} → {resultado:.2f} {destino}")
-    except:
-        st.error(texto["error_api"])
+            data = get_rates_latest(cantidad, origem, destino)
+            resultado = float(data["rates"][destino])
+        sym_o, sym_d = SYMB.get(origem, ""), SYMB.get(destino, "")
+        st.metric(label=t["resultado"], value=f"{sym_d} {resultado:,.2f} {destino}", delta=f"{sym_o} {cantidad:,.2f} {origem}")
 
-# 🕒 Historial
-if historial:
-    st.subheader(texto["historial"])
-    for item in reversed(historial[-10:]):
+        # Curiosidade do dia por moeda destino
+        archivo = {"BRL": "curiosidades_br.txt", "EUR": "curiosidades_es.txt", "USD": "curiosities_us.txt"}.get(destino, "")
+        linhas = carregar_curiosidades(archivo)
+        random.seed(st.session_state.seed_curio + destino)
+        curio = random.choice(linhas) if linhas else "Curiosidade indisponível."
+        st.info(f"🎯 {curio}")
+
+        # Dica
+        dica_txt = random.choice(dicas.get(destino, {}).get(idioma_actual, [])) if dicas.get(destino, {}) else ""
+        if dica_txt:
+            st.warning(f"💡 {dica_txt}")
+
+        # histórico
+        st.session_state.hist.append(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {sym_o} {cantidad:,.2f} {origem} → {sym_d} {resultado:,.2f} {destino}")
+    except Exception:
+        st.error("❌ " + t["error_api"])
+
+# Histórico
+if st.session_state.hist:
+    st.subheader(t["historial"])
+    for item in reversed(st.session_state.hist[-10:]):
         st.write(item)
 
 st.divider()
 
-# 📈 Gráfico histórico
-st.subheader(texto["grafico"])
-inicio, fin = st.date_input(texto["rango"], [date(2024, 1, 1), date(2024, 12, 31)])
+# Gráfico histórico
+st.subheader(t["grafico"])
+inicio, fim = st.date_input(t["rango"], [date(2024, 1, 1), date(2024, 12, 31)])
 
-if st.button("📊 " + texto["grafico"]):
-    try:
-        url = f"https://api.frankfurter.app/{inicio}..{fin}?from={origen}&to={destino}"
-        data = requests.get(url).json()
-        fechas = list(data["rates"].keys())
-        valores = [data["rates"][f][destino] for f in fechas]
-        fechas_dt = [datetime.strptime(f, "%Y-%m-%d") for f in fechas]
-
-        fig, ax = plt.subplots(figsize=(10, 4))
-        ax.plot(fechas_dt, valores, marker="o", color="royalblue")
-        ax.set_title(f"{origen} → {destino}")
-        ax.set_xlabel("Fecha")
-        ax.set_ylabel("Tasa de cambio")
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m'))
-        fig.autofmt_xdate()
-        st.pyplot(fig)
-    except:
-        st.error(texto["error_grafico"])
-
-st.caption(texto["fuente"])
+if inicio > fim:
+    st.error("⛔ Intervalo inválido. A data inici
 
 
 
