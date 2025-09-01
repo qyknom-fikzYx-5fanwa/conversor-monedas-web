@@ -1,6 +1,5 @@
-streamlit
-requests
-pandas
-plotly
-st-aggrid
-matplotlib
+streamlit==1.36.0
+pandas==2.2.2
+plotly==5.22.0
+requests==2.32.3
+st-aggrid==0.3.4.post3
