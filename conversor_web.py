@@ -26,7 +26,7 @@ idiomas = {
         "error_grafico": "❌ No se pudo generar el gráfico."
     },
     "pt": {
-        "titulo": "De reais a euros em segundos: um conversor feito para nossas viagens",
+        "titulo": "Guia de câmbio pessoal para cada viagem ao Brasil",
         "descripcion": "Conectado ao Banco Central Europeu • Atualizado diariamente às 16:00 CET",
         "valor": "Digite o valor",
         "de": "Moeda de origem",
@@ -160,6 +160,7 @@ if st.button("📊 " + texto["grafico"]):
         st.error(texto["error_grafico"])
 
 st.caption(texto["fuente"])
+
 
 
 
