@@ -27,8 +27,6 @@ idiomas = {
         "fuente": "📊 Datos del Banco Central Europeo (vía Frankfurter). Actualizados a las 16:00 CET.",
         "error_api": "No se pudo conectar con la API.",
         "error_grafico": "No se pudo generar el gráfico.",
-        "curiosidad_hoy": "🎯 Curiosidad del día",
-        "dica": "💡 Consejo financiero",
         "mostrar_graf": "📊 Mostrar gráfico histórico"
     },
     "pt": {
@@ -45,8 +43,6 @@ idiomas = {
         "fuente": "📊 Dados do Banco Central Europeu (via Frankfurter). Atualizados às 16:00 CET.",
         "error_api": "Erro ao conectar com a API.",
         "error_grafico": "Não foi possível gerar o gráfico.",
-        "curiosidad_hoy": "🎯 Curiosidade do dia",
-        "dica": "💡 Dica financeira",
         "mostrar_graf": "📊 Mostrar gráfico histórico"
     },
     "en": {
@@ -63,17 +59,13 @@ idiomas = {
         "fuente": "📊 Data from the European Central Bank (via Frankfurter). Updated at 16:00 CET.",
         "error_api": "Could not connect to the API.",
         "error_grafico": "Could not generate the chart.",
-        "curiosidad_hoy": "🎯 Curiosity of the day",
-        "dica": "💡 Tip",
         "mostrar_graf": "📊 Show historical chart"
     }
 }
 t = idiomas[idioma_actual]
 
-# Mapeia símbolos
 SYMB = {"EUR": "€", "USD": "$", "BRL": "R$"}
 
-# Dicas
 dicas = {
     "BRL": {
         "es": ["Compara tasas entre bancos antes de cambiar reales.", "El real puede depreciarse en años electorales."],
@@ -92,7 +84,6 @@ dicas = {
     }
 }
 
-# --------- Cache ---------
 @st.cache_data
 def carregar_curiosidades(archivo: str):
     p = Path(archivo)
@@ -117,20 +108,14 @@ def get_series(inicio: date, fim: date, origem: str, destino: str):
         raise RuntimeError("API error")
     data = r.json()
     rates = data.get("rates", {})
-    # ordena por data
     fechas = sorted(rates.keys())
     valores = [rates[d][destino] for d in fechas]
     fechas_dt = [datetime.strptime(d, "%Y-%m-%d") for d in fechas]
     return fechas_dt, valores
 
-# --------- Estado ---------
 if "hist" not in st.session_state:
     st.session_state.hist = []
 
-if "seed_curio" not in st.session_state:
-    st.session_state.seed_curio = datetime.now().strftime("%Y-%m-%d")
-
-# --------- UI ---------
 st.title(t["titulo"])
 st.caption(t["descripcion"])
 st.divider()
@@ -144,8 +129,7 @@ with col1:
 with col2:
     destino = st.selectbox(t["para"], monedas, index=2)
 
-# botão converter
-if st.button(t["convertir"], use_container_width=False):
+if st.button(t["convertir"]):
     try:
         if origem == destino:
             resultado = cantidad
@@ -155,24 +139,19 @@ if st.button(t["convertir"], use_container_width=False):
         sym_o, sym_d = SYMB.get(origem, ""), SYMB.get(destino, "")
         st.metric(label=t["resultado"], value=f"{sym_d} {resultado:,.2f} {destino}", delta=f"{sym_o} {cantidad:,.2f} {origem}")
 
-        # Curiosidade do dia por moeda destino
         archivo = {"BRL": "curiosidades_br.txt", "EUR": "curiosidades_es.txt", "USD": "curiosities_us.txt"}.get(destino, "")
         linhas = carregar_curiosidades(archivo)
-        random.seed(st.session_state.seed_curio + destino)
         curio = random.choice(linhas) if linhas else "Curiosidade indisponível."
         st.info(f"🎯 {curio}")
 
-        # Dica
         dica_txt = random.choice(dicas.get(destino, {}).get(idioma_actual, [])) if dicas.get(destino, {}) else ""
         if dica_txt:
             st.warning(f"💡 {dica_txt}")
 
-        # histórico
         st.session_state.hist.append(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} | {sym_o} {cantidad:,.2f} {origem} → {sym_d} {resultado:,.2f} {destino}")
     except Exception:
         st.error("❌ " + t["error_api"])
 
-# Histórico
 if st.session_state.hist:
     st.subheader(t["historial"])
     for item in reversed(st.session_state.hist[-10:]):
@@ -180,13 +159,30 @@ if st.session_state.hist:
 
 st.divider()
 
-# Gráfico histórico
 st.subheader(t["grafico"])
 inicio, fim = st.date_input(t["rango"], [date(2024, 1, 1), date(2024, 12, 31)])
 
 if inicio > fim:
-    st.error("⛔ Intervalo inválido. A data inici
+    st.error("⛔ Intervalo inválido: a data inicial não pode ser maior que a final.")
+else:
+    if st.button(t["mostrar_graf"]):
+        try:
+            fechas_dt, valores = get_series(inicio, fim, origem, destino)
+            if not fechas_dt:
+                st.warning("Sem dados para o período escolhido.")
+            else:
+                fig, ax = plt.subplots(figsize=(10, 4))
+                ax.plot(fechas_dt, valores, marker="o")
+                ax.set_title(f"{origem} → {destino}")
+                ax.set_xlabel("Data" if idioma_actual == "pt" else "Fecha" if idioma_actual == "es" else "Date")
+                ax.set_ylabel("Taxa de câmbio" if idioma_actual == "pt" else "Tasa de cambio" if idioma_actual == "es" else "Exchange rate")
+                ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m'))
+                fig.autofmt_xdate()
+                st.pyplot(fig)
+        except Exception:
+            st.error("❌ " + t["error_grafico"])
 
+st.caption(t["fuente"])
 
 
 
