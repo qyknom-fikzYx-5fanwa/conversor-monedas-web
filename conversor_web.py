@@ -11,7 +11,7 @@ idioma_actual = st.selectbox("🌍 Elige el idioma", ["es", "pt", "en"], index=0
 # 🗣️ Diccionario de textos por idioma
 idiomas = {
     "es": {
-        "titulo": "💱 Conversor de Monedas Inteligente",
+        "titulo": "Conversor de Monedas Inteligente",
         "descripcion": "Conectado al Banco Central Europeo • Actualizado diariamente a las 16:00 CET",
         "valor": "Introduce el valor",
         "de": "Moneda de origen",
@@ -26,7 +26,7 @@ idiomas = {
         "error_grafico": "❌ No se pudo generar el gráfico."
     },
     "pt": {
-        "titulo": "💱 Conversor de Moedas Inteligente",
+        "titulo": "Conversor de Moedas Inteligente",
         "descripcion": "Conectado ao Banco Central Europeu • Atualizado diariamente às 16:00 CET",
         "valor": "Digite o valor",
         "de": "Moeda de origem",
@@ -41,7 +41,7 @@ idiomas = {
         "error_grafico": "❌ Não foi possível gerar o gráfico."
     },
     "en": {
-        "titulo": "💱 Smart Currency Converter",
+        "titulo": "Smart Currency Converter",
         "descripcion": "Connected to the European Central Bank • Updated daily at 16:00 CET",
         "valor": "Enter amount",
         "de": "From currency",
@@ -160,6 +160,7 @@ if st.button("📊 " + texto["grafico"]):
         st.error(texto["error_grafico"])
 
 st.caption(texto["fuente"])
+
 
 
 
