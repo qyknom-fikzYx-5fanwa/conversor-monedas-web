@@ -18,7 +18,7 @@ else:
 # 🗣️ Diccionario de idiomas
 idiomas = {
     "pt": {
-        "titulo": "💱 Conversor de Moedas Inteligente",
+        "titulo": "Conversor de Moedas Inteligente",
         "descricao": "Conectado ao Banco Central Europeu • Atualizado diariamente às 16:00 CET",
         "valor": "Digite o valor",
         "de": "Moeda de origem",
@@ -30,7 +30,7 @@ idiomas = {
         "fonte": "📊 Dados do Banco Central Europeu. Atualizados diariamente às 16:00 CET."
     },
     "es": {
-        "titulo": "💱 Conversor de Monedas Inteligente",
+        "titulo": "Conversor de Monedas Inteligente",
         "descricao": "Conectado al Banco Central Europeo • Actualizado diariamente a las 16:00 CET",
         "valor": "Introduce el valor",
         "de": "Moneda de origen",
@@ -42,7 +42,7 @@ idiomas = {
         "fonte": "📊 Datos del Banco Central Europeo. Actualizados diariamente a las 16:00 CET."
     },
     "en": {
-        "titulo": "💱 Smart Currency Converter",
+        "titulo": "Smart Currency Converter",
         "descricao": "Connected to the European Central Bank • Updated daily at 16:00 CET",
         "valor": "Enter amount",
         "de": "From currency",
@@ -155,6 +155,7 @@ if st.button("📊 Gerar gráfico"):
         st.error("❌ Não foi possível gerar o gráfico.")
 
 st.caption(texto["fonte"])
+
 
 
 
