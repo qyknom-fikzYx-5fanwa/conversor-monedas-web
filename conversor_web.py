@@ -1,4 +1,3 @@
-conversor_web
 import streamlit as st
 import requests
 from datetime import datetime
@@ -157,3 +156,4 @@ if st.button("📈 Mostrar gráfico"):
         st.error(texto["error_conexion"])
 
 st.caption(texto["fonte"])
+
